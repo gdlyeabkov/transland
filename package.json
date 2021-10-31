@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "express": "^4.17.1",
+    "google-translate-tts": "^0.4.0-dev",
+    "google-tts-api": "^2.0.2",
     "serve-static": "^1.14.1",
     "simplefreesms": "^0.1.0",
     "translate-google": "^1.5.0",

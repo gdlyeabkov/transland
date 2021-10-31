@@ -247,10 +247,13 @@
             </div>
             <div class="translatorInputFooter">
               <div>
-                <span class="material-icons">
+                <span title="Начать перевод речи" v-if="!isMicro" @click="isMicro = !isMicro; tempInputWords = inputWords; inputWords = 'Говорите'; listen()" class="clickable material-icons">
                   mic
                 </span>
-                <span class="material-icons">
+                <span title="Остановить перевод речи" v-if="isMicro"  @click="isMicro = !isMicro; inputWords = tempInputWords" class="clickable material-icons">
+                  stop
+                </span>
+                <span @click="speak('input')" class="clickable material-icons">
                   volume_up
                 </span>
               </div>
@@ -258,18 +261,20 @@
                 <span>
                   {{ inputWords.length }} / 5000
                 </span>
-                <span class="material-icons">
-                  arrow_drop_down
-                </span> 
-                <span class="material-icons">
-                  keyboard
-                </span>
+                <div @click="virtualKeyboard = !virtualKeyboard" class="clickable">
+                  <span :style="`color: ${virtualKeyboard ? 'rgb(0, 0, 0)' : 'rgb(175, 175, 175)'}`" class="material-icons">
+                    keyboard
+                  </span>
+                  <span class="material-icons">
+                    arrow_drop_down
+                  </span>
+                </div>
               </div>
             </div>
           </div>
           <div class="translatorOutput">
             <div class="translatorOutputContent">
-              <textarea ref="outputWordsRef" v-model="outputWords" disabled>
+              <textarea :disabled="!outputEdittable" ref="outputWordsRef" v-model="outputWords">
                 
               </textarea>
               <span class="material-icons">
@@ -278,15 +283,15 @@
             </div>
             <div class="translatorInputFooter">
               <div>
-                <span class="material-icons">
+                <span @click="speak('output')" class="clickable material-icons">
                   volume_up
                 </span>
               </div>
               <div>
-                <span @click="copy()" class="material-icons">
+                <span @click="copy()" class="clickable material-icons">
                   content_copy
                 </span>
-                <span class="material-icons">
+                <span @click="outputEdittable = !outputEdittable" class="clickable material-icons">
                   edit
                 </span>
                 <span class="material-icons">
@@ -324,20 +329,151 @@
         </span>
       </div>
     </div>
+    <div v-if="yourNotListened" class="yourNotListened">
+      Вас не слышно
+    </div>
+    <div v-if="inputWords.length >= 5000" class="wordsLimit">
+      <span>
+        Максимальное количество символов 5000. Чтобы переводить дальше, пользуйтесь стрелками.
+      </span>
+      <div class="actions">
+        <div>
+          <span class="material-icons">
+            keyboard_arrow_left
+          </span>
+          <span>
+            Назад
+          </span>
+        </div>
+        <div>
+          <span>
+            Далее
+          </span>
+          <span class="material-icons">
+            keyboard_arrow_right
+          </span>
+        </div>
+      </div>
+      <button class="btn btn-">
+        ОК
+      </button>
+    </div>
+    <div v-if="virtualKeyboard" class="virtualKeyboard">
+      <div class="virtualKeyboardHeader">
+        <div>English</div>
+        <div>
+          <span @click="closeKeyboard()" class="material-icons clickable">
+            close
+          </span>
+        </div>
+      </div>
+      <div class="keysRow">
+        <div class="key">`</div>
+        <div class="key">1</div>
+        <div class="key">2</div>
+        <div class="key">3</div>
+        <div class="key">4</div>
+        <div class="key">5</div>
+        <div class="key">6</div>
+        <div class="key">7</div>
+        <div class="key">8</div>
+        <div class="key">9</div>
+        <div class="key">0</div>
+        <div class="key">-</div>
+        <div class="key">=</div>
+        <div class="key">
+          <span class="material-icons">
+            backspace
+          </span>
+        </div>
+      </div>
+      <div class="keysRow">
+        <div class="key">q</div>
+        <div class="key">w</div>
+        <div class="key">e</div>
+        <div class="key">r</div>
+        <div class="key">t</div>
+        <div class="key">y</div>
+        <div class="key">u</div>
+        <div class="key">i</div>
+        <div class="key">o</div>
+        <div class="key">p</div>
+        <div class="key">[</div>
+        <div class="key">]</div>
+        <div class="key">\</div>
+      </div>
+      <div class="keysRow">
+        <div class="key">
+          <span class="material-icons">
+            home
+          </span>
+        </div>
+        <div class="key">a</div>
+        <div class="key">s</div>
+        <div class="key">d</div>
+        <div class="key">f</div>
+        <div class="key">g</div>
+        <div class="key">h</div>
+        <div class="key">j</div>
+        <div class="key">k</div>
+        <div class="key">l</div>
+        <div class="key">;</div>
+        <div class="key">'</div>
+      </div>
+      <div class="keysRow">
+        <div class="key">
+          <span class="material-icons">
+            file_upload
+          </span>
+        </div>
+        <div class="key">z</div>
+        <div class="key">x</div>
+        <div class="key">c</div>
+        <div class="key">v</div>
+        <div class="key">b</div>
+        <div class="key">n</div>
+        <div class="key">m</div>
+        <div class="key">,</div>
+        <div class="key">.</div>
+        <div class="key">/</div>
+        <div class="key">
+          <span class="material-icons">
+            file_upload
+          </span>
+        </div>
+      </div>
+      <div class="keysRow">
+        <div class="key ctrlAltKey">Ctrl + Alt</div>
+        <div class="key spaceKey"></div>
+        <div class="key ctrlAltKey">Ctrl + Alt</div>
+      </div>
+    </div>
+    <audio ref="speaker">
+       <source ref="speakerSource">
+    </audio>
   </div>
 </template>
 
 <script>
 // const SMS = require('simplefreesms');
 
+// const tts = require('google-translate-tts');
+// const fs = require('fs');
+
 export default {
   name: 'Home',
   data(){
     return {
       inputWords: '',
-      outputWords: '',
+      outputWords: 'Перевод',
       inputLanguage: 'ru',
       outputLanguage: 'en',
+      speakUrl: '',
+      outputEdittable: false,
+      virtualKeyboard: false,
+      isMicro: false,
+      tempInputWords: '',
+      yourNotListened: false
     }
   },
   mounted(){
@@ -348,20 +484,143 @@ export default {
     // });
   }, 
   methods: {
-    swapLanguages(){
-      let tempLanuage = this.inputLanguage
-      this.inputLanguage = this.outputLanguage
-      this.outputLanguage = tempLanuage
+    listen(){
+      var audioContext = new AudioContext();
+
+      console.log("audio is starting up ...");
+
+      var BUFF_SIZE = 16384;
+
+      var audioInput = null,
+          microphone_stream = null,
+          gain_node = null,
+          script_processor_node = null,
+          script_processor_fft_node = null,
+          analyserNode = null;
+
+      if (!navigator.mediaDevices.getUserMedia)
+        navigator.mediaDevices.getUserMedia = navigator.mediaDevices.getUserMedia || navigator.mediaDevices.webkitGetUserMedia ||
+          navigator.mediaDevices.mozGetUserMedia || navigator.mediaDevices.msGetUserMedia;
+
+      if (navigator.mediaDevices.getUserMedia){
+
+        navigator.mediaDevices.getUserMedia({audio:true}, 
+          function(stream) {
+            start_microphone(stream);
+          },
+          function(e) {
+            alert('Error capturing audio.');
+          }
+        );
+
+      } else { alert('getUserMedia not supported in this browser.'); }
+
+      // ---
+
+      function show_some_data(given_typed_array, num_row_to_display, label) {
+
+          var size_buffer = given_typed_array.length;
+          var index = 0;
+          var max_index = num_row_to_display;
+
+          console.log("__________ " + label);
+
+          for (; index < max_index && index < size_buffer; index += 1) {
+
+              console.log(given_typed_array[index]);
+          }
+      }
+
+      function process_microphone_buffer(event) { // invoked by event loop
+
+          var i, N, inp, microphone_output_buffer;
+
+          microphone_output_buffer = event.inputBuffer.getChannelData(0); // just mono - 1 channel for now
+
+          // microphone_output_buffer  <-- this buffer contains current gulp of data size BUFF_SIZE
+
+          show_some_data(microphone_output_buffer, 5, "from getChannelData");
+      }
+
+      function start_microphone(stream){
+
+        gain_node = audioContext.createGain();
+        gain_node.connect( audioContext.destination );
+
+        microphone_stream = audioContext.createMediaStreamSource(stream);
+        microphone_stream.connect(gain_node); 
+
+        script_processor_node = audioContext.createScriptProcessor(BUFF_SIZE, 1, 1);
+        script_processor_node.onaudioprocess = process_microphone_buffer;
+
+        microphone_stream.connect(script_processor_node);
+
+        // --- enable volume control for output speakers
+
+        document.getElementById('volume').addEventListener('change', function() {
+
+            var curr_volume = this.value;
+            gain_node.gain.value = curr_volume;
+
+            console.log("curr_volume ", curr_volume);
+        });
+
+        // --- setup FFT
+
+        script_processor_fft_node = audioContext.createScriptProcessor(2048, 1, 1);
+        script_processor_fft_node.connect(gain_node);
+
+        analyserNode = audioContext.createAnalyser();
+        analyserNode.smoothingTimeConstant = 0;
+        analyserNode.fftSize = 2048;
+
+        microphone_stream.connect(analyserNode);
+
+        analyserNode.connect(script_processor_fft_node);
+
+        script_processor_fft_node.onaudioprocess = function() {
+
+          // get the average for the first channel
+          var array = new Uint8Array(analyserNode.frequencyBinCount);
+          analyserNode.getByteFrequencyData(array);
+
+          // draw the spectrogram
+          if (microphone_stream.playbackState == microphone_stream.PLAYING_STATE) {
+            show_some_data(array, 5, "from fft");
+          }
+        };
+      }  
     },
-    clearInput(){
-      this.inputWords = ''
+    closeKeyboard(){
+      this.virtualKeyboard = !this.virtualKeyboard
     },
-    copy() {
-      this.$refs.outputWordsRef.selecteAll()
-      document.execCommand('copy')
-    },
-    reactiveTranslate() {
-      fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
+    async speak(source){
+      // let speakText = this.inputWords
+      // let speakLanguage = this.inputLanguage
+      // if(source.includes('input')) {
+      //   speakText = this.inputWords
+      //   speakLanguage = this.inputLanguage
+      // } else {
+      //   speakText = this.outputWords
+      //   speakLanguage = this.outputLanguage
+      // }
+      // const buffer = await tts.synthesize({
+      //     text: speakText,
+      //     voice: 'en-US',
+      //     slow: false // optional
+      // });
+      // fs.writeFileSync('hello-world.mp3', buffer);
+
+      let speakText = this.inputWords
+      let speakLanguage = this.inputLanguage
+      if(source.includes('input')) {
+        speakText = this.inputWords
+        speakLanguage = this.inputLanguage
+      } else {
+        speakText = this.outputWords
+        speakLanguage = this.outputLanguage
+      }
+      fetch(`http://localhost:4000/api/speak/?language=${speakLanguage}&words=${speakText}`, {
         mode: 'cors',
         method: 'GET'
       }).then(response => response.body).then(rb  => {
@@ -383,15 +642,87 @@ export default {
             push();
           }
         });
-    }).then(stream => {
+      }).then(stream => {
         return new Response(stream, { headers: { "Content-Type": "text/html" } }).text();
       })
-      .then(result => {
+      .then(async result => {
+        console.log(`status: ${JSON.parse(result).status}`)
         if(JSON.parse(result).status.includes('OK')) {
-          console.log(`result: ${JSON.parse(result).result}`)
-          this.outputWords = JSON.parse(result).result
+          console.log(`url: ${JSON.parse(result).url}`)
+          this.speakUrl = JSON.parse(result).url
+          
+          this.$refs.speakerSource.src = this.speakUrl
+          // this.$refs.speaker.source = this.speakUrl
+          // await this.$refs.speaker.setAttribute('src', JSON.parse(result).url)
+          
+          
+          // await this.$refs.speaker.play()
+          new Audio(this.speakUrl).play()
+          let playPromise = this.$refs.speaker.play()
+          if (playPromise !== undefined) {
+            playPromise.then(async function() {
+              // Automatic playback started!
+              new Audio('https://translate.google.com/translate_tts?ie=UTF-8&q=speakText&tl=en&total=1&idx=0&textlen=9&client=tw-ob&prev=input&ttsspeed=1').play()
+            }).catch(function(error) {
+              console.log('ошибка вопроизведения')
+            });
+          }
+
         }
       });
+    },
+    swapLanguages(){
+      let tempLanuage = this.inputLanguage
+      this.inputLanguage = this.outputLanguage
+      this.outputLanguage = tempLanuage
+    },
+    clearInput(){
+      this.inputWords = ''
+    },
+    copy() {
+      
+      // this.$refs.outputWordsRef.disabled = false
+      // this.$refs.outputWordsRef.selecteAll()
+      // document.execCommand('copy')
+      // this.$refs.outputWordsRef.disabled = true
+
+      navigator.clipboard.writeText(this.outputWords)
+
+    },
+    reactiveTranslate() {
+      if(this.inputWords.length >= 5000) {
+        fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
+          mode: 'cors',
+          method: 'GET'
+        }).then(response => response.body).then(rb  => {
+          const reader = rb.getReader()
+          return new ReadableStream({
+            start(controller) {
+              function push() {
+                reader.read().then( ({done, value}) => {
+                  if (done) {
+                    console.log('done', done);
+                    controller.close();
+                    return;
+                  }
+                  controller.enqueue(value);
+                  console.log(done, value);
+                  push();
+                })
+              }
+              push();
+            }
+          });
+      }).then(stream => {
+          return new Response(stream, { headers: { "Content-Type": "text/html" } }).text();
+        })
+        .then(result => {
+          if(JSON.parse(result).status.includes('OK')) {
+            console.log(`result: ${JSON.parse(result).result}`)
+            this.outputWords = JSON.parse(result).result
+          }
+        });
+      }
     }
   }
 }
@@ -529,6 +860,7 @@ export default {
     width: 85%;
     border: none;
     min-height: 175px;
+    background-color: transparent;
   }
 
   .translatorOutput > div > textarea:disabled {
@@ -549,11 +881,111 @@ export default {
 
   .clickable {
     cursor: pointer;
+    user-select: none;
   }
 
   .languageSelector {
     border: none;
   }
 
+  .virtualKeyboard {
+    box-sizing: border-box;
+    padding: 15px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 700px;
+    height: 300px;
+    background-color: rgb(255, 255, 255);
+    border: 1px solid rgb(175, 175, 175);
+    border-radius: 8px;
+  }
+
+  .keysRow {
+    display: flex;
+    justify-content: center;
+  }
+
+  .key {
+    margin: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(240, 240, 240);
+    width: 35px;
+    height: 35px;
+    border: 1px solid rgb(175, 175, 175);
+    border-radius: 8px;
+  }
+
+  .spaceKey {
+    width: 50%;
+  }
+
+  .ctrlAltKey {
+    width: 15%;
+  }
+
+  .virtualKeyboardHeader {
+    cursor: move;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .wordsLimit {
+    display: flex;
+    position: absolute;
+    top: 90%;
+    left: 7%;
+    border: 1px solid rgb(150, 150, 150);
+    border-radius: 8px;
+    background-color: rgb(50, 150, 255);
+    width: 85%;
+    height: 50px;
+    color: rgb(255, 255, 255);
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+  }
+
+  .wordsLimit > button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgb(255, 255, 255);
+    border: 1px solid rgb(255, 255, 255);
+    width: 85px;
+    height: 25px
+  }
+
+  .actions {
+    display: flex;
+  }
+
+  .actions > * {
+    margin: 0px 15px;
+    display: flex;
+    align-items: center;
+  }
+
+  .actions > div > * {
+    margin: 0px 5px;
+  }
+
+  .yourNotListened {
+    font-weight: bolder;
+    position: absolute;
+    width: 350px;
+    height: 50px;
+    top: 90%;
+    left: 5%;
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(0, 0, 0);
+    border-radius: 8px;
+    color: rgb(255, 255, 255);
+  }
 
 </style>
