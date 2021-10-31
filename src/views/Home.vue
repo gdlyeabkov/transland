@@ -250,7 +250,7 @@
                 <span title="Начать перевод речи" v-if="!isMicro" @click="isMicro = !isMicro; tempInputWords = inputWords; inputWords = 'Говорите'; listen()" class="clickable material-icons">
                   mic
                 </span>
-                <span title="Остановить перевод речи" v-if="isMicro"  @click="isMicro = !isMicro; inputWords = tempInputWords" class="clickable material-icons">
+                <span title="Остановить перевод речи" v-if="isMicro"  @click="isMicro = !isMicro; inputWords = tempInputWords; stopListen()" class="clickable material-icons">
                   stop
                 </span>
                 <span @click="speak('input')" class="clickable material-icons">
@@ -272,29 +272,29 @@
               </div>
             </div>
           </div>
-          <div class="translatorOutput">
+          <div class="translatorOutput"  :style="`background-color: rgb(${inputWords.length >= 1 ? '225, 225, 225' : '255, 255, 255'})`">
             <div class="translatorOutputContent">
               <textarea :disabled="!outputEdittable" ref="outputWordsRef" v-model="outputWords">
                 
               </textarea>
-              <span class="material-icons">
+              <span v-if="inputWords.length >= 1" class="material-icons">
                 star_outlined
               </span>
             </div>
-            <div class="translatorInputFooter">
+            <div  v-if="inputWords.length >= 1" class="translatorInputFooter">
               <div>
                 <span @click="speak('output')" class="clickable material-icons">
                   volume_up
                 </span>
               </div>
               <div>
-                <span @click="copy()" class="clickable material-icons">
+                <span title="Копировать перевод" @click="copy()" class="clickable material-icons">
                   content_copy
                 </span>
-                <span @click="outputEdittable = !outputEdittable" class="clickable material-icons">
+                <span title="Предложить исправление" @click="outputEdittable = !outputEdittable" class="clickable material-icons">
                   edit
                 </span>
-                <span class="material-icons">
+                <span @click="isShare = !isShare" title="Отправить перевод" class="clickable material-icons">
                   share
                 </span>
               </div>
@@ -327,6 +327,31 @@
         <span>
           Предложить перевод
         </span>
+      </div>
+    </div>
+    <div v-if="isShare" class="shareDialog">
+      <span>
+        Отправить перевод
+      </span>
+      <div>
+        <div>
+          <div class="">
+            <span class="material-icons">
+              mail_outline
+            </span>
+          </div>
+          <span>
+            Электронная почта
+          </span>
+        </div>
+        <div @click="openTwitter()" class="clickable">
+          <div class="twitter">
+
+          </div>
+          <span>
+            Твиттер
+          </span>
+        </div>
       </div>
     </div>
     <div v-if="yourNotListened" class="yourNotListened">
@@ -448,17 +473,19 @@
         <div class="key ctrlAltKey">Ctrl + Alt</div>
       </div>
     </div>
-    <audio ref="speaker">
-       <source ref="speakerSource">
-    </audio>
   </div>
 </template>
 
 <script>
 // const SMS = require('simplefreesms');
 
-// const tts = require('google-translate-tts');
-// const fs = require('fs');
+// const playAudioURL = require('play-audio-url');
+
+import speak from "offline-tts";
+
+const MicRecorder = require('mic-recorder-to-mp3');
+
+import STT from 'stt.js';
 
 export default {
   name: 'Home',
@@ -473,203 +500,110 @@ export default {
       virtualKeyboard: false,
       isMicro: false,
       tempInputWords: '',
-      yourNotListened: false
+      yourNotListened: false,
+      isShare: false,
+      recorder: null,
+      stt: null,
+      intermeddiateResult: ''
     }
   },
   mounted(){
+    
     // SMS.sendStatic('XXXXXXXX', 'XXXXXXXXXXXXXX', 'message').then(function() {
     //   console.log('sended');
     // }).catch(function(err) {
     //   console.log(`not sended: ${err}`);
     // });
+
   }, 
   methods: {
-    listen(){
-      var audioContext = new AudioContext();
-
-      console.log("audio is starting up ...");
-
-      var BUFF_SIZE = 16384;
-
-      var audioInput = null,
-          microphone_stream = null,
-          gain_node = null,
-          script_processor_node = null,
-          script_processor_fft_node = null,
-          analyserNode = null;
-
-      if (!navigator.mediaDevices.getUserMedia)
-        navigator.mediaDevices.getUserMedia = navigator.mediaDevices.getUserMedia || navigator.mediaDevices.webkitGetUserMedia ||
-          navigator.mediaDevices.mozGetUserMedia || navigator.mediaDevices.msGetUserMedia;
-
-      if (navigator.mediaDevices.getUserMedia){
-
-        navigator.mediaDevices.getUserMedia({audio:true}, 
-          function(stream) {
-            start_microphone(stream);
-          },
-          function(e) {
-            alert('Error capturing audio.');
-          }
-        );
-
-      } else { alert('getUserMedia not supported in this browser.'); }
-
-      // ---
-
-      function show_some_data(given_typed_array, num_row_to_display, label) {
-
-          var size_buffer = given_typed_array.length;
-          var index = 0;
-          var max_index = num_row_to_display;
-
-          console.log("__________ " + label);
-
-          for (; index < max_index && index < size_buffer; index += 1) {
-
-              console.log(given_typed_array[index]);
-          }
-      }
-
-      function process_microphone_buffer(event) { // invoked by event loop
-
-          var i, N, inp, microphone_output_buffer;
-
-          microphone_output_buffer = event.inputBuffer.getChannelData(0); // just mono - 1 channel for now
-
-          // microphone_output_buffer  <-- this buffer contains current gulp of data size BUFF_SIZE
-
-          show_some_data(microphone_output_buffer, 5, "from getChannelData");
-      }
-
-      function start_microphone(stream){
-
-        gain_node = audioContext.createGain();
-        gain_node.connect( audioContext.destination );
-
-        microphone_stream = audioContext.createMediaStreamSource(stream);
-        microphone_stream.connect(gain_node); 
-
-        script_processor_node = audioContext.createScriptProcessor(BUFF_SIZE, 1, 1);
-        script_processor_node.onaudioprocess = process_microphone_buffer;
-
-        microphone_stream.connect(script_processor_node);
-
-        // --- enable volume control for output speakers
-
-        document.getElementById('volume').addEventListener('change', function() {
-
-            var curr_volume = this.value;
-            gain_node.gain.value = curr_volume;
-
-            console.log("curr_volume ", curr_volume);
+    openTwitter(){
+      window.open(`https://twitter.com/intent/tweet?text=${this.outputWords}`)
+    },
+    stopListen(){
+      this.recorder
+      .stop()
+      .getMp3().then(([buffer, blob]) => {
+        const file = new File(buffer, './audios/me-at-thevoice.mp3', {
+          type: blob.type,
+          lastModified: Date.now()
         });
+        let link = URL.createObjectURL(file)
+        const player = new Audio(link);
+        // player.play();
+        
+        this.stt.end();
+      
+      }).catch((e) => {
+        console.log(`error: ${e}`);
+      });
+    },
+    listen(){
+      
+      this.recorder = new MicRecorder({
+        bitRate: 128
+      });
+      // Start recording. Browser will request permission to use your microphone.
+      this.recorder.start().then(() => {
+        this.stt = new STT({
+          continuous: false,
+          interimResults: true,
+        });
+        this.stt.on('start', () => {
+          // handle start event
+        });
+        this.stt.on('end', () => {
+          // handle end event
+          this.inputWords = this.intermeddiateResult
+          this.reactiveTranslate()
+        });
+        this.stt.on('result', ({ finalTranscript, interimTranscript }) => {
+          // handle recognition result
+          this.intermeddiateResult = finalTranscript
+        });
+        this.stt.on('error', (error) => {
+          console.log('error :>> ', error);
+          // no-speech|audio-capture|not-allowed|not-supported-browser
+        });
+        this.stt.start();
+      }).catch((e) => {
+        console.log(`error: ${e}`);
+      });
 
-        // --- setup FFT
-
-        script_processor_fft_node = audioContext.createScriptProcessor(2048, 1, 1);
-        script_processor_fft_node.connect(gain_node);
-
-        analyserNode = audioContext.createAnalyser();
-        analyserNode.smoothingTimeConstant = 0;
-        analyserNode.fftSize = 2048;
-
-        microphone_stream.connect(analyserNode);
-
-        analyserNode.connect(script_processor_fft_node);
-
-        script_processor_fft_node.onaudioprocess = function() {
-
-          // get the average for the first channel
-          var array = new Uint8Array(analyserNode.frequencyBinCount);
-          analyserNode.getByteFrequencyData(array);
-
-          // draw the spectrogram
-          if (microphone_stream.playbackState == microphone_stream.PLAYING_STATE) {
-            show_some_data(array, 5, "from fft");
-          }
-        };
-      }  
     },
     closeKeyboard(){
       this.virtualKeyboard = !this.virtualKeyboard
     },
     async speak(source){
-      // let speakText = this.inputWords
-      // let speakLanguage = this.inputLanguage
-      // if(source.includes('input')) {
-      //   speakText = this.inputWords
-      //   speakLanguage = this.inputLanguage
-      // } else {
-      //   speakText = this.outputWords
-      //   speakLanguage = this.outputLanguage
-      // }
-      // const buffer = await tts.synthesize({
-      //     text: speakText,
-      //     voice: 'en-US',
-      //     slow: false // optional
-      // });
-      // fs.writeFileSync('hello-world.mp3', buffer);
-
       let speakText = this.inputWords
       let speakLanguage = this.inputLanguage
       if(source.includes('input')) {
-        speakText = this.inputWords
-        speakLanguage = this.inputLanguage
+        speak(
+          // text
+          this.inputWords,
+          // voice
+          2,
+          // speed
+          1.5,
+          // volume
+          0.8,
+          // pitch
+          0.6
+        );
       } else {
-        speakText = this.outputWords
-        speakLanguage = this.outputLanguage
+        speak(
+          // text
+          this.outputWords,
+          // voice
+          2,
+          // speed
+          1.5,
+          // volume
+          0.8,
+          // pitch
+          0.6
+        );
       }
-      fetch(`http://localhost:4000/api/speak/?language=${speakLanguage}&words=${speakText}`, {
-        mode: 'cors',
-        method: 'GET'
-      }).then(response => response.body).then(rb  => {
-        const reader = rb.getReader()
-        return new ReadableStream({
-          start(controller) {
-            function push() {
-              reader.read().then( ({done, value}) => {
-                if (done) {
-                  console.log('done', done);
-                  controller.close();
-                  return;
-                }
-                controller.enqueue(value);
-                console.log(done, value);
-                push();
-              })
-            }
-            push();
-          }
-        });
-      }).then(stream => {
-        return new Response(stream, { headers: { "Content-Type": "text/html" } }).text();
-      })
-      .then(async result => {
-        console.log(`status: ${JSON.parse(result).status}`)
-        if(JSON.parse(result).status.includes('OK')) {
-          console.log(`url: ${JSON.parse(result).url}`)
-          this.speakUrl = JSON.parse(result).url
-          
-          this.$refs.speakerSource.src = this.speakUrl
-          // this.$refs.speaker.source = this.speakUrl
-          // await this.$refs.speaker.setAttribute('src', JSON.parse(result).url)
-          
-          
-          // await this.$refs.speaker.play()
-          new Audio(this.speakUrl).play()
-          let playPromise = this.$refs.speaker.play()
-          if (playPromise !== undefined) {
-            playPromise.then(async function() {
-              // Automatic playback started!
-              new Audio('https://translate.google.com/translate_tts?ie=UTF-8&q=speakText&tl=en&total=1&idx=0&textlen=9&client=tw-ob&prev=input&ttsspeed=1').play()
-            }).catch(function(error) {
-              console.log('ошибка вопроизведения')
-            });
-          }
-
-        }
-      });
     },
     swapLanguages(){
       let tempLanuage = this.inputLanguage
@@ -690,7 +624,7 @@ export default {
 
     },
     reactiveTranslate() {
-      if(this.inputWords.length >= 5000) {
+      if(this.inputWords.length <= 5000) {
         fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
           mode: 'cors',
           method: 'GET'
@@ -713,15 +647,21 @@ export default {
               push();
             }
           });
-      }).then(stream => {
+        }).then(stream => {
           return new Response(stream, { headers: { "Content-Type": "text/html" } }).text();
         })
         .then(result => {
           if(JSON.parse(result).status.includes('OK')) {
             console.log(`result: ${JSON.parse(result).result}`)
             this.outputWords = JSON.parse(result).result
+            
+            if(this.inputWords.length <= 0){
+              this.outputWords = 'Перевод'
+            }
+            
           }
         });
+
       }
     }
   }
@@ -834,7 +774,7 @@ export default {
     display: flex;
     width: 50%;
     flex-direction: column;
-    background-color: rgb(225, 225, 225);
+    /* background-color: rgb(225, 225, 225); */
   }
 
   .translatorInputFooter {
@@ -986,6 +926,57 @@ export default {
     background-color: rgb(0, 0, 0);
     border-radius: 8px;
     color: rgb(255, 255, 255);
+  }
+
+  .shareDialog {
+    position: absolute;
+    top: 65%;
+    left: 75%;
+    width: 250px;
+    height: 150px;
+    background-color: rgb(255, 255, 255);
+    box-shadow: 0px 0px 5px rgb(150, 150, 150);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .shareDialog > span {
+    font-weight: bolder;
+    font-size: 18px;
+  }
+
+  .shareDialog > div {
+    display: flex;
+    margin: 10px;
+  }
+
+  .shareDialog > div > div {
+    display: flex;
+    flex-direction: column;
+    margin: 0px 25px;
+    width: 25%;
+    align-items: center;
+    text-align: center;
+  }
+
+  .shareDialog > div > div > div {
+    border-radius: 100%;
+    border: 1px solid rgb(200, 200, 200);
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(235, 235, 235);
+  }
+
+  .twitter {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-image: url('https://upload.wikimedia.org/wikipedia/ru/thumb/9/9f/Twitter_bird_logo_2012.svg/1200px-Twitter_bird_logo_2012.svg.png')
   }
 
 </style>

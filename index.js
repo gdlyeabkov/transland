@@ -8,8 +8,11 @@ const SMS = require('simplefreesms');
 
 const translate = require('translate-google')
 
-const tts = require('google-translate-tts');
+
 const fs = require('fs');
+// const tts = require('google-translate-tts');
+
+// const tts = require('tts.js');
 
 const googleTTS = require('google-tts-api'); // CommonJS
 
@@ -64,12 +67,25 @@ app.get('/api/speak', async (req, res) => {
     // });
     // fs.writeFileSync('./audios/hello-world.mp3', buffer);
 
-    const url = googleTTS.getAudioUrl('speakText', {
-        lang: 'en',
-        slow: false,
-        host: 'https://translate.google.com',
-    });
-    return res.json({ status: 'OK', url: url })
+    // const url = googleTTS.getAudioUrl('speakText', {
+    //     lang: 'en',
+    //     slow: false,
+    //     host: 'https://translate.google.com',
+    // });
+    // return res.json({ status: 'OK', url: url })
+
+    // tts.loadConfig(__dirname+'/node_modules/tts.js/tts_config.json');
+    // tts.loadVoice(__dirname+'/node_modules/tts.js/voices/en/en.json',function(){
+    //     var wav = tts.speak("Some words",{
+    //         amplitude: 100, //The amplitude
+    //         wordgap: 0, //Gap between words
+    //         pitch: 50, //The pitch of the speech
+    //         speed: 175, //The speed
+    //         voice: 'en/en' //The language of the text
+    //     });
+    // });
+
+    return res.json({ status: 'OK' })
       
 })
 
