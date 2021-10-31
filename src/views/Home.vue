@@ -253,7 +253,7 @@
                 <span title="Остановить перевод речи" v-if="isMicro"  @click="isMicro = !isMicro; inputWords = tempInputWords; stopListen()" class="clickable material-icons">
                   stop
                 </span>
-                <span @click="speak('input')" class="clickable material-icons">
+                <span v-if="inputWords.length >= 1" @click="speak('input')" class="clickable material-icons">
                   volume_up
                 </span>
               </div>
@@ -329,12 +329,33 @@
         </span>
       </div>
     </div>
+    <div v-if="emailDialog" class="backdrop">
+      <div class="emailDialog">
+        <div class="emailDialogHeader">
+          <span>
+            Отправка почты
+          </span>
+          <span @click="emailDialog = false" class="material-icons clickable">
+            close
+          </span>
+        </div>
+        <div class="inputData">
+          <span>
+            Введите ваш email
+          </span>
+          <input v-model="email" type="email" class="w-50 form-control" />
+          <button @click="sendMail()" class="btn btn-success">
+            Отправить на почту
+          </button>
+        </div>
+      </div>
+    </div>
     <div v-if="isShare" class="shareDialog">
       <span>
         Отправить перевод
       </span>
       <div>
-        <div>
+        <div @click="emailDialog = true" class="clickable">
           <div class="">
             <span class="material-icons">
               mail_outline
@@ -504,7 +525,9 @@ export default {
       isShare: false,
       recorder: null,
       stt: null,
-      intermeddiateResult: ''
+      intermeddiateResult: '',
+      emailDialog: false,
+      email: ''
     }
   },
   mounted(){
@@ -517,6 +540,43 @@ export default {
 
   }, 
   methods: {
+    sendMail(){
+      fetch(`https://transland.herokuapp.com/api/send/?email=${this.email}&translate=${this.outputWords}`, {
+      // fetch(`http://localhost:4000/api/send/?email=${this.email}&translate=${this.outputWords}`, {
+        mode: 'cors',
+        method: 'GET'
+      }).then(response => response.body).then(rb  => {
+        const reader = rb.getReader()
+        return new ReadableStream({
+          start(controller) {
+            function push() {
+              reader.read().then( ({done, value}) => {
+                if (done) {
+                  console.log('done', done);
+                  controller.close();
+                  return;
+                }
+                controller.enqueue(value);
+                console.log(done, value);
+                push();
+              })
+            }
+            push();
+          }
+        });
+      }).then(stream => {
+        return new Response(stream, { headers: { "Content-Type": "text/html" } }).text();
+      })
+      .then(result => {
+        if(JSON.parse(result).status.includes('OK')) {
+          alert('Сообщение отправлено')
+          this.emailDialog = false
+        } else if(JSON.parse(result).status.includes('Error')) {
+          alert('Сообщение не отправлено')
+          this.emailDialog = false
+        }
+      });
+    },
     openTwitter(){
       window.open(`https://twitter.com/intent/tweet?text=${this.outputWords}`)
     },
@@ -625,7 +685,8 @@ export default {
     },
     reactiveTranslate() {
       if(this.inputWords.length <= 5000) {
-        fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
+        fetch(`https://transland.herokuapp.com/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
+        //fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
           mode: 'cors',
           method: 'GET'
         }).then(response => response.body).then(rb  => {
@@ -978,5 +1039,49 @@ export default {
     background-repeat: no-repeat;
     background-image: url('https://upload.wikimedia.org/wikipedia/ru/thumb/9/9f/Twitter_bird_logo_2012.svg/1200px-Twitter_bird_logo_2012.svg.png')
   }
+
+  .emailDialog {
+    border-radius: 8px;
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    top: 25%;
+    left: 25%;
+    background-color: rgb(50, 0, 165);
+    box-sizing: border-box;
+    padding: 15px;
+  }
+  
+  .emailDialogHeader {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .emailDialogHeader > * {
+    color: rgb(255, 255, 255);
+    font-weight: bolder;
+  }
+
+  .backdrop {
+    background-color: rgba(0, 0, 0, 0.7);
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    z-index: 5;
+  }
+
+  .inputData {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .inputData > span, .inputData > button {
+    margin: 25px 0px;
+    color: rgb(255, 255, 255);
+  }
+
 
 </style>

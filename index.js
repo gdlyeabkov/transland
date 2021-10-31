@@ -1,20 +1,19 @@
 const express = require('express')
 const path = require('path')
 const serveStatic = require('serve-static')
-
 const app = express()
-
 const SMS = require('simplefreesms');
-
 const translate = require('translate-google')
-
-
 const fs = require('fs');
-// const tts = require('google-translate-tts');
+const nodemailer = require("nodemailer")
 
-// const tts = require('tts.js');
-
-const googleTTS = require('google-tts-api'); // CommonJS
+var transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+        user: 'gdlyeabkov@gmail.com',
+        pass: 'reversepassword'
+    }
+})
 
 app.use('/', serveStatic(path.join(__dirname, '/dist')))
 
@@ -48,48 +47,27 @@ app.get('/api/translate', (req, res) => {
     })
 })
 
-app.get('/api/speak', async (req, res) => {
-
+app.get('/api/send', (req, res) => {
+    
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, X-Access-Token, X-Socket-ID, Content-Type");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE");
 
-    let speakText = req.query.words
-    let speakLanguage = req.query.language
-    
-    // const buffer = await tts.synthesize({
-    //     text: 'speakText',
-    //     voice: 'en-US',
-    //     slow: false // optional
-    // }).catch(e => {
-    //     console.log(`error: ${e}`)
-    // });
-    // fs.writeFileSync('./audios/hello-world.mp3', buffer);
+    let mailOptions = {
+        from: `"${'gdlyeabkov'}" <${"gdlyeabkov"}>`,
+        to: `${req.query.email}`,
+        subject: `Перевод от transland`,
+        html: `<h3>Transland прислал вам перевод</h3><p>${req.query.translate}</p>`,
+    }
+    transporter.sendMail(mailOptions, function (err, info) {
+        return res.json({ status: 'OK' })
+    })
 
-    // const url = googleTTS.getAudioUrl('speakText', {
-    //     lang: 'en',
-    //     slow: false,
-    //     host: 'https://translate.google.com',
-    // });
-    // return res.json({ status: 'OK', url: url })
-
-    // tts.loadConfig(__dirname+'/node_modules/tts.js/tts_config.json');
-    // tts.loadVoice(__dirname+'/node_modules/tts.js/voices/en/en.json',function(){
-    //     var wav = tts.speak("Some words",{
-    //         amplitude: 100, //The amplitude
-    //         wordgap: 0, //Gap between words
-    //         pitch: 50, //The pitch of the speech
-    //         speed: 175, //The speed
-    //         voice: 'en/en' //The language of the text
-    //     });
-    // });
-
-    return res.json({ status: 'OK' })
-      
 })
 
 app.get('**', (req, res) => { 
+    
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, X-Access-Token, X-Socket-ID, Content-Type");
