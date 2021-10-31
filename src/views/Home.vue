@@ -1,18 +1,369 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div>
+    <div class="header">
+      <div>
+        <span class="material-icons">
+          menu
+        </span>
+        <span class="material-icons">
+          translate
+        </span>
+        <span>
+          Переводчик
+        </span>
+      </div>
+      <div>
+        <div class="avatar">
+          Г
+        </div>
+        <span class="material-icons">
+          apps
+        </span>
+      </div>
+    </div>
+    <div class="main">
+      <div class="translator">
+        <div class="translatorHeader">
+          <div>
+            <span>
+              Определить язык
+            </span>
+            <select v-model="inputLanguage" class="languageSelector w-50 form-select" aria-label="Default select example">
+              <option value="ru">Русский</option>
+              <option value="en">Английский</option>
+              <option value="zh-cn">Китайский</option>
+            </select>
+          </div>
+          <span @click="swapLanguages()" class="material-icons clickable">
+            swap_horiz
+          </span>
+          <div class="languageOutput">
+            <select v-model="outputLanguage" class="languageSelector w-50 form-select" aria-label="Default select example">
+              <option value="ru">Русский</option>
+              <option value="en">Английский</option>
+              <option value="zh-cn">Китайский</option>
+            </select>
+          </div>
+        </div>
+        <div class="translatorIO">
+          <div class="translatorInput">
+            <div class="translatorInputContent">
+              <textarea @input="reactiveTranslate()" v-model="inputWords">
+              
+              </textarea>
+              <span @click="clearInput()" v-if="inputWords.length >= 1" class="material-icons clickable">
+                close
+              </span>
+            </div>
+            <div class="translatorInputFooter">
+              <div>
+                <span class="material-icons">
+                  mic
+                </span>
+                <span class="material-icons">
+                  volume_up
+                </span>
+              </div>
+              <div>
+                <span>
+                  {{ inputWords.length }} / 5000
+                </span>
+                <span class="material-icons">
+                  arrow_drop_down
+                </span> 
+                <span class="material-icons">
+                  keyboard
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="translatorOutput">
+            <div class="translatorOutputContent">
+              <textarea ref="outputWordsRef" v-model="outputWords" disabled>
+                
+              </textarea>
+              <span class="material-icons">
+                star_outlined
+              </span>
+            </div>
+            <div class="translatorInputFooter">
+              <div>
+                <span class="material-icons">
+                  volume_up
+                </span>
+              </div>
+              <div>
+                <span @click="copy()" class="material-icons">
+                  content_copy
+                </span>
+                <span class="material-icons">
+                  edit
+                </span>
+                <span class="material-icons">
+                  share
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <div>
+        <span class="icon material-icons">
+          history
+        </span>
+        <span>
+          История
+        </span>
+      </div>
+      <div>
+        <span class="icon material-icons">
+          star
+        </span>
+        <span>
+          Сохранённые
+        </span>
+      </div>
+      <div>
+        <span class="icon material-icons">
+          group
+        </span>
+        <span>
+          Предложить перевод
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+// const SMS = require('simplefreesms');
 
 export default {
   name: 'Home',
-  components: {
-    HelloWorld
+  data(){
+    return {
+      inputWords: '',
+      outputWords: '',
+      inputLanguage: 'ru',
+      outputLanguage: 'en',
+    }
+  },
+  mounted(){
+    // SMS.sendStatic('XXXXXXXX', 'XXXXXXXXXXXXXX', 'message').then(function() {
+    //   console.log('sended');
+    // }).catch(function(err) {
+    //   console.log(`not sended: ${err}`);
+    // });
+  }, 
+  methods: {
+    swapLanguages(){
+      let tempLanuage = this.inputLanguage
+      this.inputLanguage = this.outputLanguage
+      this.outputLanguage = tempLanuage
+    },
+    clearInput(){
+      this.inputWords = ''
+    },
+    copy() {
+      this.$refs.outputWordsRef.selecteAll()
+      document.execCommand('copy')
+    },
+    reactiveTranslate() {
+      fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
+        mode: 'cors',
+        method: 'GET'
+      }).then(response => response.body).then(rb  => {
+        const reader = rb.getReader()
+        return new ReadableStream({
+          start(controller) {
+            function push() {
+              reader.read().then( ({done, value}) => {
+                if (done) {
+                  console.log('done', done);
+                  controller.close();
+                  return;
+                }
+                controller.enqueue(value);
+                console.log(done, value);
+                push();
+              })
+            }
+            push();
+          }
+        });
+    }).then(stream => {
+        return new Response(stream, { headers: { "Content-Type": "text/html" } }).text();
+      })
+      .then(result => {
+        if(JSON.parse(result).status.includes('OK')) {
+          console.log(`result: ${JSON.parse(result).result}`)
+          this.outputWords = JSON.parse(result).result
+        }
+      });
+    }
   }
 }
 </script>
+<style scoped>
+
+  .header {
+    height: 50px;
+    display: flex;
+    box-sizing: border-box;
+    padding: 0px 25px;
+    justify-content: space-between;
+    border-bottom: 1px solid rgb(200, 200, 200);
+  }
+
+  .header > div {
+    display: flex;
+    align-items: center;
+  }
+
+  .header > div > * {
+    margin: 0px 10px;
+  }
+
+  .avatar {
+    border-radius: 100%;
+    width: 35px;
+    height: 35px;
+    background-color: rgb(0, 150, 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgb(255, 255, 255);
+  }
+
+  .footer {
+    display: flex;
+    justify-content: center;
+  }
+
+  .footer > div {
+    margin: 0px 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: rgb(175, 175, 175);
+    width: 200px;
+  }
+
+  .icon {
+    border-radius: 100%;
+    border: 1px solid rgb(200, 200, 200);
+    padding: 15px;
+    font-size: 36px;
+    margin: 10px 0px;
+  }
+
+  .translator {
+    border: 1px solid rgb(150, 150, 150);
+    margin: 50px auto;
+    height: 300px;
+    width: 85%;
+    background-color: rgb(255, 255, 255);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+  }
+  .translatorHeader {
+    height: 25%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 15px 25px;
+    border-bottom: 1px solid rgb(150, 150, 150);
+  }
+
+  .translatorHeader > div {
+    display: flex;
+    align-items: center;
+    width: 50%;
+  }
+
+  .translatorHeader > div > span {
+    margin: 0px 25px;
+  }
+
+  .translatorIO {
+    height: 75%;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .translatorInput {
+    box-sizing: border-box;
+    padding: 15px;
+    height: 100%;
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgb(150, 150, 150);
+  }
+
+  .translatorOutput {
+    box-sizing: border-box;
+    padding: 15px;
+    height: 100%;
+    display: flex;
+    width: 50%;
+    flex-direction: column;
+    background-color: rgb(225, 225, 225);
+  }
+
+  .translatorInputFooter {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .translatorInputFooter > div {
+    display: flex;
+  }
+
+  .translatorInputFooter > div > * {
+    margin: 0px 10px;
+  }
+
+  .translatorInput > div > textarea {
+    width: 85%;
+    border: none;
+    min-height: 175px;
+  }
+
+  .translatorOutput > div > textarea {
+    width: 85%;
+    border: none;
+    min-height: 175px;
+  }
+
+  .translatorOutput > div > textarea:disabled {
+    background-color: transparent;
+  }
+
+  .languageOutput {
+    justify-content: flex-end;
+  }
+
+  .translatorInputContent {
+    display: flex;
+  }
+
+  .translatorOutputContent {
+    display: flex;
+  }
+
+  .clickable {
+    cursor: pointer;
+  }
+
+  .languageSelector {
+    border: none;
+  }
+
+
+</style>
