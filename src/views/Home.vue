@@ -250,7 +250,8 @@
                 <span title="Начать перевод речи" v-if="!isMicro" @click="isMicro = !isMicro; tempInputWords = inputWords; inputWords = 'Говорите'; listen()" class="clickable material-icons">
                   mic
                 </span>
-                <span title="Остановить перевод речи" v-if="isMicro"  @click="isMicro = !isMicro; inputWords = tempInputWords; stopListen()" class="clickable material-icons">
+                <!-- <span title="Остановить перевод речи" v-if="isMicro"  @click="isMicro = !isMicro; inputWords = tempInputWords; stopListen()" class="clickable material-icons"> -->
+                <span title="Остановить перевод речи" v-if="isMicro"  @click="isMicro = !isMicro; stopListen()" class="clickable material-icons">
                   stop
                 </span>
                 <span v-if="inputWords.length >= 1" @click="speak('input')" class="clickable material-icons">
@@ -303,6 +304,11 @@
         </div>
       </div>
     </div>
+    <div class="feedback">
+      <span @click="feedbackDialog = true">
+        Отправить отзыв
+      </span>
+    </div>
     <div class="footer">
       <div>
         <span class="icon material-icons">
@@ -326,6 +332,34 @@
         </span>
         <span>
           Предложить перевод
+        </span>
+      </div>
+    </div>
+    <div v-if="feedbackDialog" class="feedbackDialog">
+      <div class="feedbackDialogHeader">
+        <h5>
+          Отправить отзыв
+        </h5>
+      </div>
+      <div class="feedbackDialogBody">
+        <textarea placeholder="Не включайте в отзыв конфиденциальную информацию. Если у вас есть вопросы в том числе правового характера, посетите Справочный центр или обратитесь в службу поддержки." v-model="feedback"></textarea>
+        <div>
+          <input type="checkbox" v-model="attachScreenshot">
+          <span>
+            Прикрепить скриншот
+          </span>
+        </div>
+        <span>
+          Некоторая информация об аккаунте и системе может быть отправлена в Google. Это помогает нам устранять неполадки и улучшать наши сервисы. Ваши данные будут обрабатываться в соответствии с Политикой конфиденциальности и Условиями использования. Мы можем запрашивать у вас дополнительные сведения или сообщать вам об обновлениях по электронной почте. Подать запрос на изменение контента в связи с нарушением законодательства можно на этой странице.
+        </span>
+      </div>
+      <hr />
+      <div class="feedbackDialogFooter">
+        <span @click="feedbackDialog = false" class="feedbackCancelBtn">
+          Отмена
+        </span>
+        <span @click="feedbackDialog = false" class="feedbackSubmitBtn">
+          Отправить
         </span>
       </div>
     </div>
@@ -404,8 +438,8 @@
         ОК
       </button>
     </div>
-    <div v-if="virtualKeyboard" class="virtualKeyboard">
-      <div class="virtualKeyboardHeader">
+    <div v-if="virtualKeyboard" ref="keyboard" class="virtualKeyboard">
+      <div @mousemove="moveKeyboard($event)" @mousedown="startMoveKeyboard()" @mouseup="stopMoveKeyboard()" class="virtualKeyboardHeader">
         <div>English</div>
         <div>
           <span @click="closeKeyboard()" class="material-icons clickable">
@@ -414,75 +448,243 @@
         </div>
       </div>
       <div class="keysRow">
-        <div class="key">`</div>
-        <div class="key">1</div>
-        <div class="key">2</div>
-        <div class="key">3</div>
-        <div class="key">4</div>
-        <div class="key">5</div>
-        <div class="key">6</div>
-        <div class="key">7</div>
-        <div class="key">8</div>
-        <div class="key">9</div>
-        <div class="key">0</div>
-        <div class="key">-</div>
-        <div class="key">=</div>
-        <div class="key">
+        <div @click="inputWords += isShift ?
+          '~'
+        :
+          '`'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '~'
+        :
+          '`'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '!'
+        :
+          '1'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '!'
+        :
+          '1'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '@'
+        :
+          '2'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '@'
+        :
+          '2'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '#'
+        :
+          '3'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '#'
+        :
+          '3'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '$'
+        :
+          '4'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '$'
+        :
+          '4'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '%'
+        :
+          '5'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '%'
+        :
+          '5'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '^'
+        :
+          '6'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '^'
+        :
+          '6'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '&'
+        :
+          '7'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '&'
+        :
+          '7'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '*'
+        :
+          '8'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '*'
+        :
+          '8'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '('
+        :
+          '9'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '('
+        :
+          '9'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          ')'
+        :
+          '0'; reactiveTranslate()" class="key">{{
+        isShift ?
+          ')'
+        :
+          '0'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '_'
+        :
+          '-'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '_'
+        :
+          '-'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '+'
+        :
+          '='; reactiveTranslate()" class="key">{{
+        isShift ?
+          '+'
+        :
+          '='
+        }}</div>
+        <div @click="inputWords.length >= 1 ? inputWords = inputWords.substring(0, inputWords.length - 1) : inputWords = ''" class="backSpaceKey key">
           <span class="material-icons">
             backspace
           </span>
         </div>
       </div>
       <div class="keysRow">
-        <div class="key">q</div>
-        <div class="key">w</div>
-        <div class="key">e</div>
-        <div class="key">r</div>
-        <div class="key">t</div>
-        <div class="key">y</div>
-        <div class="key">u</div>
-        <div class="key">i</div>
-        <div class="key">o</div>
-        <div class="key">p</div>
-        <div class="key">[</div>
-        <div class="key">]</div>
-        <div class="key">\</div>
+        <div @click="inputWords += 'q'; reactiveTranslate();" class="key">q</div>
+        <div @click="inputWords += 'w'; reactiveTranslate();" class="key">w</div>
+        <div @click="inputWords += 'e'; reactiveTranslate();" class="key">e</div>
+        <div @click="inputWords += 'r'; reactiveTranslate();" class="key">r</div>
+        <div @click="inputWords += 't'; reactiveTranslate();" class="key">t</div>
+        <div @click="inputWords += 'y'; reactiveTranslate()" class="key">y</div>
+        <div @click="inputWords += 'u'; reactiveTranslate()" class="key">u</div>
+        <div @click="inputWords += 'i'; reactiveTranslate()" class="key">i</div>
+        <div @click="inputWords += 'o'; reactiveTranslate()" class="key">o</div>
+        <div @click="inputWords += 'p'; reactiveTranslate()" class="key">p</div>
+        <div @click="inputWords += isShift ?
+          '{'
+        :
+          '['; reactiveTranslate()" class="key">{{
+        isShift ?
+          '{'
+        :
+          '['
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '}'
+        :
+          ']'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '}'
+        :
+          ']'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '|'
+        :
+          '\\'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '|'
+        :
+          '\\'
+        }}</div>
       </div>
       <div class="keysRow">
-        <div class="key">
+        <div @click="homePress()" :class="{ keyHold: isHome, homeKey: true, key: true }">
           <span class="material-icons">
             home
           </span>
         </div>
-        <div class="key">a</div>
-        <div class="key">s</div>
-        <div class="key">d</div>
-        <div class="key">f</div>
-        <div class="key">g</div>
-        <div class="key">h</div>
-        <div class="key">j</div>
-        <div class="key">k</div>
-        <div class="key">l</div>
-        <div class="key">;</div>
-        <div class="key">'</div>
+        <div @click="inputWords += 'a'; reactiveTranslate()" class="key">a</div>
+        <div @click="inputWords += 's'; reactiveTranslate()" class="key">s</div>
+        <div @click="inputWords += 'd'; reactiveTranslate()" class="key">d</div>
+        <div @click="inputWords += 'f'; reactiveTranslate()" class="key">f</div>
+        <div @click="inputWords += 'g'; reactiveTranslate()" class="key">g</div>
+        <div @click="inputWords += 'h'; reactiveTranslate()" class="key">h</div>
+        <div @click="inputWords += 'j'; reactiveTranslate()" class="key">j</div>
+        <div @click="inputWords += 'k'; reactiveTranslate()" class="key">k</div>
+        <div @click="inputWords += 'l'; reactiveTranslate()" class="key">l</div>
+        <div @click="inputWords += isShift ?
+          ':'
+        :
+          ';'; reactiveTranslate()" class="key">{{
+        isShift ?
+          ':'
+        :
+          ';'
+        }}</div>
+        <div @click="inputWords += (isShift ?
+          '\u0022'
+        :
+          '\''); reactiveTranslate()" class="key">{{
+        isShift ?
+          '\"'
+        :
+          '\''
+        }}</div>
       </div>
       <div class="keysRow">
-        <div class="key">
+        <div @click="shiftPress()" :class="{ shiftKey: true, key: true, keyHold: isShift }">
           <span class="material-icons">
             file_upload
           </span>
         </div>
-        <div class="key">z</div>
-        <div class="key">x</div>
-        <div class="key">c</div>
-        <div class="key">v</div>
-        <div class="key">b</div>
-        <div class="key">n</div>
-        <div class="key">m</div>
-        <div class="key">,</div>
-        <div class="key">.</div>
-        <div class="key">/</div>
-        <div class="key">
+        <div @click="inputWords += 'z'; reactiveTranslate()" class="key">z</div>
+        <div @click="inputWords += 'x'; reactiveTranslate()" class="key">x</div>
+        <div @click="inputWords += 'c'; reactiveTranslate()" class="key">c</div>
+        <div @click="inputWords += 'v'; reactiveTranslate()" class="key">v</div>
+        <div @click="inputWords += 'b'; reactiveTranslate()" class="key">b</div>
+        <div @click="inputWords += 'n'; reactiveTranslate()" class="key">n</div>
+        <div @click="inputWords += 'm'; reactiveTranslate()" class="key">m</div>
+        <div @click="inputWords += isShift ?
+          '<'
+        :
+          ','; reactiveTranslate()" class="key">{{
+        isShift ?
+          '\u003c'
+        :
+          ','
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '>'
+        :
+          '.'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '>'
+        :
+          '.'
+        }}</div>
+        <div @click="inputWords += isShift ?
+          '?'
+        :
+          '/'; reactiveTranslate()" class="key">{{
+        isShift ?
+          '?'
+        :
+          '/'
+        }}</div>
+        <div @click="shiftPress()" :class="{ shiftKey: true, key: true, keyHold: isShift }">
           <span class="material-icons">
             file_upload
           </span>
@@ -490,7 +692,7 @@
       </div>
       <div class="keysRow">
         <div class="key ctrlAltKey">Ctrl + Alt</div>
-        <div class="key spaceKey"></div>
+        <div @click="inputWords += ' '" class="key spaceKey"></div>
         <div class="key ctrlAltKey">Ctrl + Alt</div>
       </div>
     </div>
@@ -527,7 +729,13 @@ export default {
       stt: null,
       intermeddiateResult: '',
       emailDialog: false,
-      email: ''
+      email: '',
+      keyboardIsMove: false,
+      isShift: false,
+      isHome: false,
+      feedbackDialog: false,
+      feedback: '',
+      attachScreenshot: false,
     }
   },
   mounted(){
@@ -540,6 +748,48 @@ export default {
 
   }, 
   methods: {
+    homePress(){
+      this.isHome = !this.isHome
+      Array.from(document.querySelectorAll('.key')).map(key => {
+        if(!key.classList.contains("spaceKey") && !key.classList.contains("homeKey") && !key.classList.contains("shiftKey") && !key.classList.contains("backSpaceKey") && !key.classList.contains("ctrlAltKey") && !key.classList.contains("specialKey")) {
+          if(this.isHome) {
+            key.textContent = key.textContent.toUpperCase()
+          } else if(!this.isHome) {
+            key.textContent = key.textContent.toLowerCase()
+          }
+        }
+      })
+    },
+    shiftPress(){
+      this.isShift = !this.isShift
+      Array.from(document.querySelectorAll('.key')).map(key => {
+        if(!key.classList.contains("spaceKey") && !key.classList.contains("homeKey") && !key.classList.contains("shiftKey") && !key.classList.contains("backSpaceKey") && !key.classList.contains("ctrlAltKey") && !key.classList.contains("specialKey")) {
+          if(this.isShift) {
+            key.textContent = key.textContent.toUpperCase()
+          } else if(!this.isShift) {
+            key.textContent = key.textContent.toLowerCase()
+          }
+        }
+      })
+    },
+    moveKeyboard(event){
+      if(this.keyboardIsMove) {
+        this.$refs.keyboard.style.top
+        this.$refs.keyboard.style = `
+          position: absolute;
+          top: ${event.y - 35}px;
+          left: ${event.x - 35}px;
+        ` 
+      }      
+    },
+    startMoveKeyboard(){
+      if(!this.keyboardIsMove) {
+        this.keyboardIsMove = true
+      }
+    },
+    stopMoveKeyboard(){
+      this.keyboardIsMove = false
+    },
     sendMail(){
       fetch(`https://transland.herokuapp.com/api/send/?email=${this.email}&translate=${this.outputWords}`, {
       // fetch(`http://localhost:4000/api/send/?email=${this.email}&translate=${this.outputWords}`, {
@@ -616,6 +866,7 @@ export default {
           // handle end event
           this.inputWords = this.intermeddiateResult
           this.reactiveTranslate()
+          this.isMicro = false
         });
         this.stt.on('result', ({ finalTranscript, interimTranscript }) => {
           // handle recognition result
@@ -624,6 +875,7 @@ export default {
         this.stt.on('error', (error) => {
           console.log('error :>> ', error);
           // no-speech|audio-capture|not-allowed|not-supported-browser
+          this.yourNotListened = true
         });
         this.stt.start();
       }).catch((e) => {
@@ -669,9 +921,11 @@ export default {
       let tempLanuage = this.inputLanguage
       this.inputLanguage = this.outputLanguage
       this.outputLanguage = tempLanuage
+      this.reactiveTranslate()
     },
     clearInput(){
       this.inputWords = ''
+      this.outputWords = 'Перевод'
     },
     copy() {
       
@@ -686,7 +940,7 @@ export default {
     reactiveTranslate() {
       if(this.inputWords.length <= 5000) {
         fetch(`https://transland.herokuapp.com/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
-        //fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
+        // fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
           mode: 'cors',
           method: 'GET'
         }).then(response => response.body).then(rb  => {
@@ -908,6 +1162,8 @@ export default {
   }
 
   .key {
+    user-select: none;
+    cursor: pointer;
     margin: 5px;
     display: flex;
     align-items: center;
@@ -919,8 +1175,20 @@ export default {
     border-radius: 8px;
   }
 
+  .key:hover {
+    box-shadow: 0px 0px 5px rgb(200, 200, 200);
+  }
+
+  .key:active {
+    box-shadow: inset 0px 0px 5px rgb(200, 200, 200);
+  }
+
   .spaceKey {
     width: 50%;
+  }
+
+  .shiftKey {
+    width: 15%;
   }
 
   .ctrlAltKey {
@@ -928,6 +1196,7 @@ export default {
   }
 
   .virtualKeyboardHeader {
+    user-select: none;
     cursor: move;
     display: flex;
     justify-content: space-between;
@@ -1083,5 +1352,89 @@ export default {
     color: rgb(255, 255, 255);
   }
 
+  .keyHold {
+    background-color: rgb(215, 215, 215);
+  }
+
+  .feedback {
+    justify-content: flex-end;
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0px 25px;
+  }
+
+  .feedback > span {
+    font-size: 12px;
+    cursor: pointer;
+  }
+  
+  .feedback > span:hover {
+    text-decoration: underline;
+  }
+
+  .feedbackDialog {
+    position: absolute;
+    top: 5%;
+    left: 36%;
+    background-color: rgb(255, 255, 255);
+    width: 28%;
+    height: 70%;
+    box-shadow: 0px 0px 15px rgb(150, 150, 150);
+  }
+
+  .feedbackDialogHeader {
+    background-color: rgb(150, 150, 150);
+    width: 100%;
+    height: 50px;
+    box-sizing: border-box;
+    padding: 10px;
+    color: rgb(255, 255, 255);
+  }
+
+  .feedbackDialogBody {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .feedbackDialogBody > textarea {
+    height: 100px;
+    border: none;
+  }
+
+  .feedbackDialogBody > div {
+    display: flex;
+    align-items: center;
+  }
+
+  .feedbackDialogBody > div > * {
+    margin: 0px 10px;
+  }
+
+  .feedbackDialogBody > span {
+    box-sizing: border-box;
+    padding: 15px;
+    font-size: 12px;
+  }
+
+  .feedbackDialogFooter {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .feedbackDialogFooter > span {
+    cursor: pointer;
+    font-weight: bolder;
+    margin: 0px 15px;
+  }
+
+  .feedbackCancelBtn {
+    color: rgb(175, 175, 175);
+  }
+
+  .feedbackSubmitBtn {
+    color: rgb(0, 100, 255);
+  }
 
 </style>
