@@ -4,8 +4,9 @@ const serveStatic = require('serve-static')
 const app = express()
 const SMS = require('simplefreesms');
 const translate = require('translate-google')
-const fs = require('fs');
 const nodemailer = require("nodemailer")
+
+const baseUrl = process.env.VUE_APP_BASE_URL
 
 var transporter = nodemailer.createTransport({
     service: 'Gmail',
@@ -73,10 +74,8 @@ app.get('**', (req, res) => {
     res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, X-Access-Token, X-Socket-ID, Content-Type");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE");
     
-    return res.redirect(`https://transland.herokuapp.com/?redirectroute=${req.path}`)
-    // return res.redirect(`http://localhost:4000/?redirectroute=${req.path}`)
+    return res.redirect(`${baseUrl}/?redirectroute=${req.path}`)
 })
 
 const port = process.env.PORT || 8080
-// const port = 4000  
 app.listen(port)

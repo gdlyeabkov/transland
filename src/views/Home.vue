@@ -707,7 +707,7 @@ const MicRecorder = require('mic-recorder-to-mp3');
 
 import STT from 'stt.js';
 
-const baseUrl = 'https://inky-clever-coffee.glitch.me'
+const baseUrl = process.env.VUE_APP_BASE_URL
 
 export default {
   name: 'Home',
