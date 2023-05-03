@@ -700,15 +700,14 @@
 </template>
 
 <script>
-// const SMS = require('simplefreesms');
-
-// const playAudioURL = require('play-audio-url');
 
 import speak from "offline-tts";
 
 const MicRecorder = require('mic-recorder-to-mp3');
 
 import STT from 'stt.js';
+
+const baseUrl = 'https://inky-clever-coffee.glitch.me'
 
 export default {
   name: 'Home',
@@ -737,15 +736,6 @@ export default {
       feedback: '',
       attachScreenshot: false,
     }
-  },
-  mounted(){
-    
-    // SMS.sendStatic('XXXXXXXX', 'XXXXXXXXXXXXXX', 'message').then(function() {
-    //   console.log('sended');
-    // }).catch(function(err) {
-    //   console.log(`not sended: ${err}`);
-    // });
-
   }, 
   methods: {
     homePress(){
@@ -790,9 +780,8 @@ export default {
     stopMoveKeyboard(){
       this.keyboardIsMove = false
     },
-    sendMail(){
-      fetch(`https://transland.herokuapp.com/api/send/?email=${this.email}&translate=${this.outputWords}`, {
-      // fetch(`http://localhost:4000/api/send/?email=${this.email}&translate=${this.outputWords}`, {
+    sendMail() {
+      fetch(`${baseUrl}/api/send/?email=${this.email}&translate=${this.outputWords}`, {
         mode: 'cors',
         method: 'GET'
       }).then(response => response.body).then(rb  => {
@@ -838,9 +827,6 @@ export default {
           type: blob.type,
           lastModified: Date.now()
         });
-        let link = URL.createObjectURL(file)
-        const player = new Audio(link);
-        // player.play();
         
         this.stt.end();
       
@@ -853,7 +839,6 @@ export default {
       this.recorder = new MicRecorder({
         bitRate: 128
       });
-      // Start recording. Browser will request permission to use your microphone.
       this.recorder.start().then(() => {
         this.stt = new STT({
           continuous: false,
@@ -887,8 +872,6 @@ export default {
       this.virtualKeyboard = !this.virtualKeyboard
     },
     async speak(source){
-      let speakText = this.inputWords
-      let speakLanguage = this.inputLanguage
       if(source.includes('input')) {
         speak(
           // text
@@ -928,19 +911,11 @@ export default {
       this.outputWords = 'Перевод'
     },
     copy() {
-      
-      // this.$refs.outputWordsRef.disabled = false
-      // this.$refs.outputWordsRef.selecteAll()
-      // document.execCommand('copy')
-      // this.$refs.outputWordsRef.disabled = true
-
       navigator.clipboard.writeText(this.outputWords)
-
     },
     reactiveTranslate() {
       if(this.inputWords.length <= 5000) {
-        fetch(`https://transland.herokuapp.com/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
-        // fetch(`http://localhost:4000/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
+        fetch(`${baseUrl}/api/translate/?inputlanguage=${this.inputLanguage}&outputlanguage=${this.outputLanguage}&words=${this.inputWords}`, {
           mode: 'cors',
           method: 'GET'
         }).then(response => response.body).then(rb  => {
@@ -1089,7 +1064,6 @@ export default {
     display: flex;
     width: 50%;
     flex-direction: column;
-    /* background-color: rgb(225, 225, 225); */
   }
 
   .translatorInputFooter {
