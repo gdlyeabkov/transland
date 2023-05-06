@@ -1,19 +1,4 @@
-# trainslation
-
-## Project setup
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+# Transland
+### Transland is an open source web service for translating languages.
+## Visit
+The project is available at the link 
